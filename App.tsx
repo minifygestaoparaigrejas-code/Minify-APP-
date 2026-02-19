@@ -12,53 +12,7 @@ import AIChat from './components/AIChat';
 import { supabase } from './services/supabase';
 import { Session } from '@supabase/supabase-js';
 
-// --- MOCK DATA (Mantidos os mesmos para consistência lógica) ---
-
-const MOCK_CHURCHES: Church[] = [
-  { id: 'hq', name: 'Catedral Principal (Sede)', type: 'HQ', address: 'Centro' },
-  { id: 'br1', name: 'Minify Zona Norte', type: 'BRANCH', address: 'Bairro Norte' },
-  { id: 'br2', name: 'Minify Zona Sul', type: 'BRANCH', address: 'Bairro Sul' },
-];
-
-const MOCK_USERS: UserType[] = [
-  {
-    id: 'admin-1',
-    name: 'Jonathan Wallyce',
-    email: 'admin@minify.com',
-    role: UserRole.ADMIN,
-    avatar: 'https://ui-avatars.com/api/?name=Jonathan+Wallyce&background=6366f1&color=fff&size=256',
-    bio: 'Administrador Geral do Sistema Minify.',
-    churchId: 'hq',
-    coverImage: 'https://images.unsplash.com/photo-1544427920-c49ccfb85579?auto=format&fit=crop&w=1000&q=80'
-  },
-  {
-    id: 'student-1',
-    name: 'Marcos Silva',
-    email: 'marcos@gmail.com',
-    role: UserRole.STUDENT,
-    avatar: 'https://ui-avatars.com/api/?name=Marcos+Silva&background=cbd5e1&color=1e293b',
-    bio: 'Estudante da Bíblia.',
-    churchId: 'hq'
-  },
-  {
-    id: 'teacher-1',
-    name: 'Prof. Carlos Eduardo',
-    email: 'carlos@minify.com',
-    role: UserRole.TEACHER,
-    avatar: 'https://ui-avatars.com/api/?name=Carlos+Eduardo&background=0ea5e9&color=fff',
-    bio: 'Professor de Teologia e Escola Bíblica.',
-    churchId: 'hq'
-  },
-  {
-    id: 'pastor-br1',
-    name: 'Pr. Ricardo Souza',
-    email: 'ricardo@minify.com',
-    role: UserRole.ADMIN,
-    avatar: 'https://ui-avatars.com/api/?name=Ricardo+Souza&background=f97316&color=fff',
-    bio: 'Pastor Responsável - Filial Zona Norte.',
-    churchId: 'br1'
-  }
-];
+// --- MOCK DATA ---
 
 const INITIAL_POSTS: Post[] = [
   {
@@ -212,13 +166,6 @@ const AuthScreen = ({ onViewChange, onLogin }: any) => {
     }
   };
 
-  const handleQuickAccess = (index: number) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      onLogin(MOCK_USERS[index]);
-      setIsLoading(false);
-    }, 600);
-  };
 
   return (
     <div className="min-h-screen flex bg-surface-50 font-sans">
@@ -274,28 +221,6 @@ const AuthScreen = ({ onViewChange, onLogin }: any) => {
             </Button>
           </form>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-surface-200"></div></div>
-            <div className="relative flex justify-center text-sm"><span className="px-4 bg-white text-surface-500 uppercase font-medium text-xs tracking-wider">Acesso Rápido (Demo)</span></div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[
-              { icon: ShieldCheck, label: 'Admin Sede', color: 'text-brand-600', bg: 'bg-brand-50', border: 'border-brand-100', idx: 0 },
-              { icon: Building2, label: 'Pastor Filial', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', idx: 3 },
-              { icon: GraduationCap, label: 'Professor', color: 'text-sky-600', bg: 'bg-sky-50', border: 'border-sky-100', idx: 2 },
-              { icon: User, label: 'Membro', color: 'text-surface-600', bg: 'bg-surface-50', border: 'border-surface-200', idx: 1 }
-            ].map((role) => (
-              <button
-                key={role.idx}
-                onClick={() => handleQuickAccess(role.idx)}
-                className={`p-4 rounded-2xl border ${role.border} ${role.bg} ${role.color} hover:shadow-md transition-all flex flex-col items-center gap-2 group hover:border-brand-200`}
-              >
-                <role.icon size={24} className="group-hover:scale-110 transition-transform" />
-                <span className="text-sm font-semibold">{role.label}</span>
-              </button>
-            ))}
-          </div>
         </div>
       </div>
     </div>
