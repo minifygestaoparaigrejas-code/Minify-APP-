@@ -15,55 +15,9 @@ import { Session } from '@supabase/supabase-js';
 
 // --- MOCK DATA ---
 
-const INITIAL_POSTS: Post[] = [
-  {
-    id: 'p1',
-    author: { name: 'Jonathan Wallyce', role: UserRole.ADMIN, avatar: 'https://ui-avatars.com/api/?name=Jonathan+Wallyce&background=6366f1&color=fff' },
-    content: 'A paz do Senhor, amados! Lembrando que nosso culto de oração começa hoje às 19h30. Não percam!',
-    likes: 24,
-    comments: 5,
-    timestamp: 'Há 2 horas',
-    type: 'announcement',
-    churchId: 'hq'
-  },
-  {
-    id: 'p2',
-    author: { name: 'Prof. Carlos', role: UserRole.TEACHER, avatar: 'https://ui-avatars.com/api/?name=Carlos+Eduardo&background=0ea5e9&color=fff' },
-    content: 'Disponibilizei o material da aula de Teologia Sistemática na aba de Ensino. Baixem o PDF para domingo.',
-    likes: 15,
-    comments: 2,
-    timestamp: 'Há 5 horas',
-    type: 'devotional',
-    churchId: 'hq'
-  }
-];
+const INITIAL_POSTS: Post[] = [];
 
-const INITIAL_EVENTS: ChurchEvent[] = [
-  {
-    id: 'evt-1',
-    title: 'Culto da Família',
-    date: new Date().toISOString(),
-    type: EventType.SERVICE,
-    churchId: 'hq',
-    details: { location: 'Templo Maior', leader: 'Pr. Jonathan', subtitle: 'Uma noite de milagres' }
-  },
-  {
-    id: 'evt-2',
-    title: 'Aula: Panorama Bíblico',
-    date: new Date(Date.now() + 86400000 * 2).toISOString(),
-    type: EventType.CLASS,
-    churchId: 'hq',
-    details: { location: 'Sala 3', leader: 'Prof. Carlos', lessonNumber: '4', subtitle: 'Módulo: Antigo Testamento' }
-  },
-  {
-    id: 'evt-3',
-    title: 'Reunião de Obreiros',
-    date: new Date(Date.now() + 86400000 * 5).toISOString(),
-    type: EventType.MEETING,
-    churchId: 'hq',
-    details: { location: 'Sala de Reuniões', leader: 'Pr. Jonathan' }
-  }
-];
+const INITIAL_EVENTS: ChurchEvent[] = [];
 
 // --- DESIGN SYSTEM COMPONENTS ---
 
@@ -362,12 +316,17 @@ const OnboardingWizard = ({ onComplete }: { onComplete: (data: any) => void }) =
 // --- FINANCE DASHBOARD ---
 
 const FinanceDashboard = () => {
-  const transactions: Transaction[] = [
-    { id: 't1', type: 'income', amount: 2500, description: 'Dízimos Culto Domingo', category: 'Dízimos', date: new Date().toISOString(), churchId: 'hq' },
-    { id: 't2', type: 'expense', amount: 800, description: 'Conta de Energia', category: 'Operacional', date: new Date().toISOString(), churchId: 'hq' },
-    { id: 't3', type: 'income', amount: 450, description: 'Oferta Especial Missões', category: 'Ofertas', date: new Date().toISOString(), churchId: 'hq' },
-    { id: 't4', type: 'expense', amount: 1200, description: 'Aluguel Salão Filial', category: 'Aluguel', date: new Date().toISOString(), churchId: 'hq' },
-  ];
+  const transactions: Transaction[] = [];
+
+  const totalIncome = transactions
+    .filter(t => t.type === 'income')
+    .reduce((acc, curr) => acc + curr.amount, 0);
+
+  const totalExpense = transactions
+    .filter(t => t.type === 'expense')
+    .reduce((acc, curr) => acc + curr.amount, 0);
+
+  const balance = totalIncome - totalExpense;
 
   return (
     <div className="space-y-8 animate-fade-in-up">
@@ -375,10 +334,10 @@ const FinanceDashboard = () => {
         <Card className="bg-brand-600 border-none text-white relative overflow-hidden group">
           <div className="relative z-10">
             <p className="text-brand-100 text-xs font-bold uppercase tracking-widest mb-1">Saldo Atual</p>
-            <h3 className="text-3xl font-black">R$ 15.420,50</h3>
+            <h3 className="text-3xl font-black">R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
             <div className="flex items-center gap-2 mt-4 text-brand-200 text-sm">
               <TrendingUp size={16} />
-              <span>+12% em relação ao mês anterior</span>
+              <span>Dados baseados nos registros deste mês</span>
             </div>
           </div>
           <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
@@ -387,23 +346,23 @@ const FinanceDashboard = () => {
 
         <Card className="border-emerald-100 bg-emerald-50/30">
           <p className="text-emerald-600 text-[10px] font-bold uppercase tracking-widest mb-1">Entradas (Mês)</p>
-          <h3 className="text-2xl font-bold text-surface-900">R$ 8.240,00</h3>
+          <h3 className="text-2xl font-bold text-surface-900">R$ {totalIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
           <div className="mt-4 flex items-center gap-2">
             <div className="w-full bg-emerald-100 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-emerald-500 h-full w-[75%]"></div>
+              <div className="bg-emerald-500 h-full w-[0%]"></div>
             </div>
-            <span className="text-xs font-bold text-emerald-600">75%</span>
+            <span className="text-xs font-bold text-emerald-600">0%</span>
           </div>
         </Card>
 
         <Card className="border-rose-100 bg-rose-50/30">
           <p className="text-rose-600 text-[10px] font-bold uppercase tracking-widest mb-1">Saídas (Mês)</p>
-          <h3 className="text-2xl font-bold text-surface-900">R$ 3.120,00</h3>
+          <h3 className="text-2xl font-bold text-surface-900">R$ {totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
           <div className="mt-4 flex items-center gap-2">
             <div className="w-full bg-rose-100 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-rose-500 h-full w-[35%]"></div>
+              <div className="bg-rose-500 h-full w-[0%]"></div>
             </div>
-            <span className="text-xs font-bold text-rose-600">35%</span>
+            <span className="text-xs font-bold text-rose-600">0%</span>
           </div>
         </Card>
       </div>
@@ -419,29 +378,42 @@ const FinanceDashboard = () => {
           </div>
 
           <Card noPadding className="overflow-hidden border-surface-200">
-            <div className="bg-surface-50 px-6 py-3 border-b border-surface-200 grid grid-cols-4 text-[10px] font-black uppercase text-surface-400 tracking-widest">
+            <div className="bg-surface-50 px-6 py-3 border-b border-surface-100 grid grid-cols-4 text-[10px] font-black uppercase text-surface-400 tracking-widest">
               <div className="col-span-2">Descrição</div>
               <div>Categoria</div>
               <div className="text-right">Valor</div>
             </div>
-            <div className="divide-y divide-surface-100">
-              {transactions.map(t => (
-                <div key={t.id} className="px-6 py-4 grid grid-cols-4 items-center hover:bg-surface-50/50 transition-colors group">
-                  <div className="col-span-2 flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${t.type === 'income' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-                      {t.type === 'income' ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+            <div className="divide-y divide-surface-100 min-h-[300px] flex flex-col items-center justify-center text-center p-8">
+              {transactions.length > 0 ? (
+                transactions.map(t => (
+                  <div key={t.id} className="px-6 py-4 grid grid-cols-4 items-center w-full hover:bg-surface-50/50 transition-colors group text-left">
+                    <div className="col-span-2 flex items-center gap-3">
+                      <div className={`p-2 rounded-lg ${t.type === 'income' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                        {t.type === 'income' ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-surface-900 group-hover:text-brand-600 transition-colors">{t.description}</div>
+                        <div className="text-[10px] text-surface-500">{new Date(t.date).toLocaleDateString('pt-BR')}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-sm font-bold text-surface-900 group-hover:text-brand-600 transition-colors">{t.description}</div>
-                      <div className="text-[10px] text-surface-500">{new Date(t.date).toLocaleDateString('pt-BR')}</div>
+                    <div className="text-xs font-medium text-surface-600">{t.category}</div>
+                    <div className={`text-right font-bold ${t.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {t.type === 'income' ? '+' : '-'} R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </div>
                   </div>
-                  <div className="text-xs font-medium text-surface-600">{t.category}</div>
-                  <div className={`text-right font-bold ${t.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {t.type === 'income' ? '+' : '-'} R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                ))
+              ) : (
+                <div className="flex flex-col items-center gap-4 py-12">
+                  <div className="w-16 h-16 bg-surface-50 rounded-full flex items-center justify-center text-surface-300">
+                    <Wallet size={32} />
                   </div>
+                  <div>
+                    <h4 className="font-bold text-surface-900">Nenhuma transação registrada</h4>
+                    <p className="text-sm text-surface-500 mt-1">Comece a gerir o financeiro da sua igreja adicionando sua primeira entrada ou saída.</p>
+                  </div>
+                  <Button size="sm" variant="outline" className="mt-2"><Plus size={16} /> Registrar Primeiro Movimento</Button>
                 </div>
-              ))}
+              )}
             </div>
           </Card>
         </div>
@@ -452,15 +424,15 @@ const FinanceDashboard = () => {
             <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
               <TrendingUp className="text-brand-400" />
             </div>
-            <h4 className="font-bold text-lg mb-2">Meta de Missões</h4>
-            <p className="text-surface-400 text-sm mb-6">Estamos a apenas **R$ 1.500** de atingir nossa meta para o projeto missionário.</p>
+            <h4 className="font-bold text-lg mb-2">Configure sua Meta</h4>
+            <p className="text-surface-400 text-sm mb-6">Defina metas de arrecadação para missões, obras ou eventos especiais.</p>
             <div className="space-y-2">
               <div className="flex justify-between text-xs font-bold">
                 <span className="text-brand-300">Progresso</span>
-                <span>85%</span>
+                <span>0%</span>
               </div>
               <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
-                <div className="bg-brand-500 h-full w-[85%] shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
+                <div className="bg-brand-500 h-full w-[0%] shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
               </div>
             </div>
           </Card>
@@ -470,22 +442,8 @@ const FinanceDashboard = () => {
               <div className="p-2 bg-brand-50 text-brand-600 rounded-lg"><Activity size={18} /></div>
               <span className="font-bold text-sm">Distribuição de Gastos</span>
             </div>
-            <div className="p-4 space-y-4">
-              {[
-                { label: 'Operacional', val: 45, color: 'bg-indigo-500' },
-                { label: 'Manutenção', val: 25, color: 'bg-emerald-500' },
-                { label: 'Social', val: 30, color: 'bg-amber-500' }
-              ].map(item => (
-                <div key={item.label}>
-                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1">
-                    <span>{item.label}</span>
-                    <span>{item.val}%</span>
-                  </div>
-                  <div className="w-full bg-surface-100 h-1 rounded-full overflow-hidden">
-                    <div className={`${item.color} h-full`} style={{ width: `${item.val}%` }}></div>
-                  </div>
-                </div>
-              ))}
+            <div className="p-8 flex flex-col items-center justify-center text-center">
+              <p className="text-xs text-surface-500 italic">Aguardando registros para gerar o gráfico de distribuição.</p>
             </div>
           </Card>
         </div>
