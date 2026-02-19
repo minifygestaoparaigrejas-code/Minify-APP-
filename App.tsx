@@ -1261,6 +1261,52 @@ export default function App() {
                 <p className="text-surface-500 max-w-md mt-2">Módulo em desenvolvimento com o novo design system Minify.</p>
               </div>
             )}
+
+            {activeTab === 'profile' && (
+              <div className="max-w-2xl mx-auto space-y-8 animate-fade-in-up">
+                <Card>
+                  <div className="flex items-center gap-6 pb-6 border-b border-surface-100">
+                    <img src={user.avatar} className="w-24 h-24 rounded-3xl object-cover border-4 border-white shadow-xl" />
+                    <div>
+                      <h3 className="text-2xl font-bold text-surface-900">{user.name}</h3>
+                      <p className="text-surface-500">{user.email}</p>
+                      <Badge variant="brand" className="mt-2 uppercase">{user.role}</Badge>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 space-y-6">
+                    <div>
+                      <h4 className="font-bold text-surface-900 mb-4 flex items-center gap-2">
+                        <Settings size={18} className="text-brand-600" /> Ferramentas de Desenvolvedor
+                      </h4>
+                      <div className="p-6 bg-rose-50 border border-rose-100 rounded-2xl">
+                        <div className="flex justify-between items-start gap-4">
+                          <div>
+                            <div className="font-bold text-rose-900">Resetar Experiência de Uso</div>
+                            <div className="text-sm text-rose-600 mt-1">
+                              Use esta opção para limpar seu progresso local e ver o processo de Onboarding e Tutorial novamente.
+                            </div>
+                          </div>
+                          <Button
+                            variant="secondary"
+                            className="bg-white border-rose-200 text-rose-600 hover:bg-rose-100 whitespace-nowrap"
+                            onClick={() => {
+                              if (user?.id) {
+                                localStorage.removeItem(`onboarding_${user.id}`);
+                                localStorage.removeItem(`tutorial_seen_${user.id}`);
+                                handleLogout();
+                              }
+                            }}
+                          >
+                            Resetar Agora
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
           </div>
         </div>
 
