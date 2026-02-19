@@ -501,23 +501,27 @@ const GamifiedTutorial = ({ onFinish }: { onFinish: () => void }) => {
   const steps = [
     {
       title: "Seja bem-vindo, Pastor!",
-      content: "O Minify é o seu novo braço direito na gestão do Reino. Vamos te mostrar o básico em 30 segundos.",
-      icon: <Sparkles size={40} className="text-amber-400" />
+      content: "O Minify é o seu novo braço direito na gestão do Reino. Sua conta já está ativa e seu dashboard pronto!",
+      icon: <Sparkles size={40} className="text-amber-400" />,
+      highlight: "header"
     },
     {
       title: "Financeiro em Tempo Real",
       content: "Aqui você tem transparência total. Dízimos, ofertas e gastos da sede e filiais em um só lugar.",
-      icon: <DollarSign size={40} className="text-emerald-400" />
+      icon: <DollarSign size={40} className="text-emerald-400" />,
+      highlight: "sidebar-finance"
     },
     {
       title: "Comunicação que Transforma",
       content: "Use o Feed para manter a igreja unida e bem informada sobre cada culto e evento.",
-      icon: <MessageSquare size={40} className="text-brand-400" />
+      icon: <MessageSquare size={40} className="text-brand-400" />,
+      highlight: "feed"
     },
     {
-      title: "Inteligência & Gestão",
-      content: "Nossa IA te ajuda a analisar dados e focar no que realmente importa: as pessoas.",
-      icon: <LayoutDashboard size={40} className="text-indigo-400" />
+      title: "Experiência Completa",
+      content: "Nossa IA e as ferramentas de gestão foram pensadas para você focar no que importa: as pessoas.",
+      icon: <LayoutDashboard size={40} className="text-indigo-400" />,
+      highlight: "ai-fab"
     }
   ];
 
@@ -527,12 +531,12 @@ const GamifiedTutorial = ({ onFinish }: { onFinish: () => void }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] bg-surface-900/90 backdrop-blur-xl flex items-center justify-center p-6"
+        className="fixed inset-0 z-[100] bg-surface-900/40 backdrop-blur-[2px] flex items-end lg:items-center justify-center p-6 pointer-events-none"
       >
         <motion.div
           initial={{ scale: 0.9, y: 20 }}
           animate={{ scale: 1, y: 0 }}
-          className="bg-white rounded-[2.5rem] p-8 max-w-lg w-full text-center relative overflow-hidden shadow-2xl border border-white/20"
+          className="bg-white rounded-[2rem] p-8 max-w-md w-full text-center relative overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-white/20 pointer-events-auto mb-10 lg:mb-0"
         >
           {/* Animated Background Element */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-brand-500/10 rounded-full blur-[80px]"></div>
@@ -540,23 +544,23 @@ const GamifiedTutorial = ({ onFinish }: { onFinish: () => void }) => {
           <AnimatePresence mode="wait">
             <motion.div
               key={step}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.1 }}
-              transition={{ duration: 0.4 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
               className="relative z-10"
             >
-              <div className="w-24 h-24 bg-surface-50 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner border border-surface-100">
+              <div className="w-20 h-20 bg-surface-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner border border-surface-100">
                 {steps[step].icon}
               </div>
-              <h2 className="text-3xl font-black text-surface-900 leading-tight mb-4">{steps[step].title}</h2>
-              <p className="text-surface-600 text-lg leading-relaxed mb-10 px-4">{steps[step].content}</p>
+              <h2 className="text-2xl font-black text-surface-900 leading-tight mb-3">{steps[step].title}</h2>
+              <p className="text-surface-600 text-base leading-relaxed mb-8 px-4 font-medium">{steps[step].content}</p>
             </motion.div>
           </AnimatePresence>
 
           <div className="flex flex-col gap-4 relative z-10">
-            <Button size="lg" className="w-full text-lg h-14" onClick={() => step < steps.length - 1 ? setStep(s => s + 1) : onFinish()}>
-              {step < steps.length - 1 ? "Próximo Passo 🚀" : "Vamos Começar! 🎉"}
+            <Button size="lg" className="w-full text-lg h-14 shadow-lg shadow-brand-500/30" onClick={() => step < steps.length - 1 ? setStep(s => s + 1) : onFinish()}>
+              {step < steps.length - 1 ? "Entendi, Próximo 🚀" : "Concluir Apresentação 🎉"}
             </Button>
             <div className="flex justify-center gap-2">
               {steps.map((_, i) => (
@@ -564,6 +568,8 @@ const GamifiedTutorial = ({ onFinish }: { onFinish: () => void }) => {
               ))}
             </div>
           </div>
+
+          {step === 0 && <div className="absolute -bottom-2 right-2 text-[10px] text-surface-300 font-bold uppercase tracking-widest opacity-50">Tour Minify v1.0</div>}
         </motion.div>
       </motion.div>
     </AnimatePresence>
@@ -1001,6 +1007,7 @@ export default function App() {
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
 
   React.useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -1017,7 +1024,9 @@ export default function App() {
 
         // Verificar se precisa de onboarding (por agora, apenas checamos localmente)
         const hasCompletedOnboarding = localStorage.getItem(`onboarding_${session.user.id}`);
+        const hasSeenTutorial = localStorage.getItem(`tutorial_seen_${session.user.id}`);
         setView(hasCompletedOnboarding ? 'app' : 'onboarding');
+        setShowTutorial(!hasSeenTutorial);
       }
     });
 
@@ -1046,7 +1055,9 @@ export default function App() {
   const handleLogin = (u: UserType) => {
     setUser(u);
     const hasCompletedOnboarding = localStorage.getItem(`onboarding_${u.id}`);
+    const hasSeenTutorial = localStorage.getItem(`tutorial_seen_${u.id}`);
     setView(hasCompletedOnboarding ? 'app' : 'onboarding');
+    setShowTutorial(!hasSeenTutorial);
   };
 
   const handleLogout = async () => {
@@ -1057,6 +1068,8 @@ export default function App() {
     console.log('Onboarding Finalizado:', data);
     if (user?.id) {
       localStorage.setItem(`onboarding_${user.id}`, 'true');
+      const hasSeenTutorial = localStorage.getItem(`tutorial_seen_${user.id}`);
+      setShowTutorial(!hasSeenTutorial);
     }
     setView('app');
   };
@@ -1263,11 +1276,12 @@ export default function App() {
       <AIChat userRole={user.role} isOpen={isAIChatOpen} onClose={() => setIsAIChatOpen(false)} />
 
       {/* Gamified Tutorial Overlay */}
-      {view === 'app' && !localStorage.getItem(`tutorial_seen_${user.id}`) && (
+      {view === 'app' && showTutorial && (
         <GamifiedTutorial onFinish={() => {
-          localStorage.setItem(`tutorial_seen_${user.id}`, 'true');
-          // Forçar renderização para remover tutorial
-          setView('app');
+          if (user?.id) {
+            localStorage.setItem(`tutorial_seen_${user.id}`, 'true');
+          }
+          setShowTutorial(false);
         }} />
       )}
     </div>
