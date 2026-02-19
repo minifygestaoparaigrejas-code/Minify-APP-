@@ -5,7 +5,7 @@ import {
   LogOut, MessageSquare, FileText, Heart, MessageCircle, Share2,
   Image as ImageIcon, Send, Search, MoreHorizontal, Bell,
   DollarSign, TrendingUp, TrendingDown, Plus, X, Filter, Wallet, Menu, ArrowRight, CheckCircle, Building2, MapPin, ArrowLeft, Lock, Lightbulb, Edit3, Mail, Sparkles, Activity, Clock, MoreVertical, ChevronLeft, ChevronRight, CalendarDays, Briefcase, Paperclip,
-  CalendarCheck, Mic2, Music, UserCheck, Layers, ChevronDown
+  CalendarCheck, Mic2, Music, UserCheck, Layers, ChevronDown, Eye, EyeOff
 } from 'lucide-react';
 import { UserRole, User as UserType, Post, Transaction, TransactionType, Church, ChurchEvent, EventType, NavItem, Group, ChatMessage } from './types';
 import AIChat from './components/AIChat';
@@ -87,15 +87,30 @@ const Badge: React.FC<{ children?: React.ReactNode; variant?: 'brand' | 'success
   );
 };
 
-const Input = (props: React.InputHTMLAttributes<HTMLInputElement> & { icon?: any }) => (
-  <div className="relative group">
-    {props.icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 group-focus-within:text-brand-500 transition-colors">{props.icon}</div>}
-    <input
-      {...props}
-      className={`w-full bg-surface-50 border border-surface-200 text-surface-900 text-sm rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white p-3 transition-all outline-none placeholder:text-surface-400 ${props.icon ? 'pl-10' : ''} ${props.className}`}
-    />
-  </div>
-);
+const Input = (props: React.InputHTMLAttributes<HTMLInputElement> & { icon?: any }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = props.type === 'password';
+
+  return (
+    <div className="relative group">
+      {props.icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 group-focus-within:text-brand-500 transition-colors">{props.icon}</div>}
+      <input
+        {...props}
+        type={isPassword ? (showPassword ? 'text' : 'password') : props.type}
+        className={`w-full bg-surface-50 border border-surface-200 text-surface-900 text-sm rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white p-3 transition-all outline-none placeholder:text-surface-400 ${props.icon ? 'pl-10' : ''} ${isPassword ? 'pr-12' : ''} ${props.className}`}
+      />
+      {isPassword && (
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-400 hover:text-brand-500 transition-colors p-1"
+        >
+          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      )}
+    </div>
+  );
+};
 
 const Button = ({ children, variant = 'primary', size = 'md', className, ...props }: any) => {
   const baseStyle = "font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95";
@@ -174,20 +189,48 @@ const AuthScreen = ({ onLogin }: any) => {
       setError('As senhas não coincidem');
       return;
     }
+    if (password.length < 6) {
+      setError('A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
     setIsLoading(true);
     setError(null);
     setSuccess(null);
     try {
+      console.log('Iniciando cadastro para:', email);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            full_name: email.split('@')[0],
+            role: 'admin' // Definindo como admin por padrão para facilitar o teste inicial
+          }
+        }
       });
+
       if (error) throw error;
-      if (data.user) {
-        setSuccess('Cadastro realizado! Verifique seu e-mail para confirmar.');
-        setTimeout(() => setMode('login'), 3000);
+
+      console.log('Resultado Supabase:', data);
+
+      if (data?.user) {
+        // Se o usuário foi criado mas não há sessão (precisa confirmar e-mail)
+        if (!data.session) {
+          setSuccess('Cadastro realizado! Verifique seu e-mail para confirmar a conta antes de entrar.');
+        } else {
+          // Se o login foi automático (e-mail confirmation desativado no Supabase)
+          onLogin({
+            id: data.user.id,
+            name: data.user.email?.split('@')[0] || 'Novo Usuário',
+            email: data.user.email || '',
+            role: UserRole.ADMIN,
+            avatar: `https://ui-avatars.com/api/?name=${data.user.email}&background=6366f1&color=fff`,
+            churchId: 'hq'
+          });
+        }
       }
     } catch (err: any) {
+      console.error('Erro no Supabase Register:', err);
       setError(err.message || 'Erro ao realizar cadastro.');
     } finally {
       setIsLoading(false);
