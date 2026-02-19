@@ -130,16 +130,20 @@ const MinifyLogo = ({ className = "w-8 h-8", light = false }: { className?: stri
 
 // --- AUTH SCREENS ---
 
-const AuthScreen = ({ onViewChange, onLogin }: any) => {
+const AuthScreen = ({ onLogin }: any) => {
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setSuccess(null);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -148,13 +152,11 @@ const AuthScreen = ({ onViewChange, onLogin }: any) => {
 
       if (error) throw error;
       if (data.user) {
-        // In a real app, we would fetch the user profile from a 'profiles' table
-        // For now, we'll map the auth user to our UserType
         onLogin({
           id: data.user.id,
           name: data.user.email?.split('@')[0] || 'Usuário',
           email: data.user.email || '',
-          role: UserRole.ADMIN, // Defaulting to ADMIN for demo
+          role: UserRole.ADMIN,
           avatar: `https://ui-avatars.com/api/?name=${data.user.email}&background=6366f1&color=fff`,
           churchId: 'hq'
         });
@@ -166,6 +168,49 @@ const AuthScreen = ({ onViewChange, onLogin }: any) => {
     }
   };
 
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      setError('As senhas não coincidem');
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      if (error) throw error;
+      if (data.user) {
+        setSuccess('Cadastro realizado! Verifique seu e-mail para confirmar.');
+        setTimeout(() => setMode('login'), 3000);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erro ao realizar cadastro.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin,
+      });
+      if (error) throw error;
+      setSuccess('E-mail de recuperação enviado! Verifique sua caixa de entrada.');
+    } catch (err: any) {
+      setError(err.message || 'Erro ao enviar e-mail de recuperação.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex bg-surface-50 font-sans">
@@ -186,41 +231,116 @@ const AuthScreen = ({ onViewChange, onLogin }: any) => {
 
       {/* Right Side - Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-12 bg-white">
-        <div className="w-full max-w-md space-y-8">
+        <div className="w-full max-w-md space-y-8 animate-fade-in-up">
           <div className="text-center lg:text-left">
-            <h2 className="text-3xl font-bold text-surface-900 tracking-tight">Bem-vindo</h2>
-            <p className="text-surface-500 mt-2">Acesse o sistema Minify.</p>
+            <h2 className="text-3xl font-bold text-surface-900 tracking-tight">
+              {mode === 'login' && 'Bem-vindo'}
+              {mode === 'register' && 'Crie sua conta'}
+              {mode === 'forgot' && 'Recuperar senha'}
+            </h2>
+            <p className="text-surface-500 mt-2">
+              {mode === 'login' && 'Acesse o sistema Minify.'}
+              {mode === 'register' && 'Junte-se ao Minify hoje.'}
+              {mode === 'forgot' && 'Enviaremos um link de recuperação.'}
+            </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            {error && <div className="p-3 rounded-xl bg-rose-50 text-rose-600 text-sm font-medium border border-rose-100">{error}</div>}
-            <Input
-              placeholder="seu@email.com"
-              icon={<Mail size={18} />}
-              value={email}
-              onChange={(e: any) => setEmail(e.target.value)}
-              required
-            />
-            <Input
-              type="password"
-              placeholder="••••••••"
-              icon={<Lock size={18} />}
-              value={password}
-              onChange={(e: any) => setPassword(e.target.value)}
-              required
-            />
-            <div className="flex justify-between items-center text-sm">
-              <label className="flex items-center gap-2 text-surface-600 cursor-pointer">
-                <input type="checkbox" className="rounded border-surface-300 text-brand-600 focus:ring-brand-500" />
-                Lembrar-me
-              </label>
-              <button type="button" onClick={() => onViewChange('forgot')} className="text-brand-600 font-medium hover:underline">Esqueceu a senha?</button>
-            </div>
-            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-              {isLoading ? 'Autenticando...' : 'Entrar na Plataforma'}
-            </Button>
-          </form>
+          {error && <div className="p-3 rounded-xl bg-rose-50 text-rose-600 text-sm font-medium border border-rose-100">{error}</div>}
+          {success && <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 text-sm font-medium border border-emerald-100">{success}</div>}
 
+          {mode === 'login' && (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <Input
+                placeholder="seu@email.com"
+                icon={<Mail size={18} />}
+                value={email}
+                onChange={(e: any) => setEmail(e.target.value)}
+                required
+              />
+              <Input
+                type="password"
+                placeholder="••••••••"
+                icon={<Lock size={18} />}
+                value={password}
+                onChange={(e: any) => setPassword(e.target.value)}
+                required
+              />
+              <div className="flex justify-between items-center text-sm">
+                <label className="flex items-center gap-2 text-surface-600 cursor-pointer">
+                  <input type="checkbox" className="rounded border-surface-300 text-brand-600 focus:ring-brand-500" />
+                  Lembrar-me
+                </label>
+                <button type="button" onClick={() => setMode('forgot')} className="text-brand-600 font-medium hover:underline">Esqueceu a senha?</button>
+              </div>
+              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                {isLoading ? 'Autenticando...' : 'Entrar na Plataforma'}
+              </Button>
+              <p className="text-center text-sm text-surface-500">
+                Não tem uma conta?{' '}
+                <button type="button" onClick={() => setMode('register')} className="text-brand-600 font-bold hover:underline">Cadastre-se</button>
+              </p>
+            </form>
+          )}
+
+          {mode === 'register' && (
+            <form onSubmit={handleRegister} className="space-y-4">
+              <Input
+                placeholder="seu@email.com"
+                icon={<Mail size={18} />}
+                value={email}
+                onChange={(e: any) => setEmail(e.target.value)}
+                required
+              />
+              <Input
+                type="password"
+                placeholder="Sua senha"
+                icon={<Lock size={18} />}
+                value={password}
+                onChange={(e: any) => setPassword(e.target.value)}
+                required
+              />
+              <Input
+                type="password"
+                placeholder="Confirme sua senha"
+                icon={<ShieldCheck size={18} />}
+                value={confirmPassword}
+                onChange={(e: any) => setConfirmPassword(e.target.value)}
+                required
+              />
+              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                {isLoading ? 'Criando conta...' : 'Registrar'}
+              </Button>
+              <button
+                type="button"
+                onClick={() => setMode('login')}
+                className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-surface-500 hover:text-surface-900 transition-colors"
+              >
+                <ArrowLeft size={16} /> Voltar para o Login
+              </button>
+            </form>
+          )}
+
+          {mode === 'forgot' && (
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <Input
+                placeholder="seu@email.com"
+                icon={<Mail size={18} />}
+                value={email}
+                onChange={(e: any) => setEmail(e.target.value)}
+                required
+              />
+              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                {isLoading ? 'Enviando...' : 'Enviar Link de Recuperação'}
+              </Button>
+              <button
+                type="button"
+                onClick={() => setMode('login')}
+                className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-surface-500 hover:text-surface-900 transition-colors"
+              >
+                <ArrowLeft size={16} /> Voltar para o Login
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </div>
@@ -463,7 +583,7 @@ export default function App() {
     await supabase.auth.signOut();
   };
 
-  if (view === 'login' || view === 'forgot') return <AuthScreen onViewChange={setView} onLogin={handleLogin} />;
+  if (view === 'login') return <AuthScreen onLogin={handleLogin} />;
   if (!user) return null;
 
   const SidebarItem = ({ item, active, onClick }: any) => (
