@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, BookOpen, ShieldCheck, GraduationCap,
   LayoutDashboard, Users, Calendar, Settings,
@@ -145,6 +146,430 @@ const MinifyLogo = ({ className = "w-8 h-8", light = false }: { className?: stri
 
 // --- AUTH SCREENS ---
 
+// --- ONBOARDING WIZARD ---
+
+const OnboardingWizard = ({ onComplete }: { onComplete: (data: any) => void }) => {
+  const [step, setStep] = useState(1);
+  const [data, setData] = useState({
+    churchName: '',
+    churchType: 'HQ',
+    address: '',
+    departments: [] as string[],
+    plan: 'basic'
+  });
+
+  const nextStep = () => setStep(s => s + 1);
+  const prevStep = () => setStep(s => s - 1);
+
+  const DEPARTMENTS = [
+    { id: 'finance', name: 'Financeiro', icon: DollarSign, desc: 'Gestão completa de dízimos e ofertas' },
+    { id: 'teaching', name: 'Ensino / EBD', icon: BookOpen, desc: 'Aulas, presença e material didático' },
+    { id: 'events', name: 'Eventos & Cultos', icon: Calendar, desc: 'Escalabilidade e liturgia' },
+    { id: 'social', name: 'Comunicação', icon: MessageSquare, desc: 'Rede social interna e avisos' },
+    { id: 'membership', name: 'Membros', icon: Users, desc: 'Cadastro e acompanhamento pastoral' },
+  ];
+
+  const PLANS = [
+    { id: 'free', name: 'Gratuito', price: 'R$ 0', period: '/mês', desc: 'Para igrejas pequenas em início.' },
+    { id: 'pro', name: 'Profissional', price: 'R$ 89', period: '/mês', desc: 'Recursos avançados e suporte prioritário.' },
+    { id: 'premium', name: 'Premium / Sede', price: 'R$ 199', period: '/mês', desc: 'Ideal para sedes com múltiplas filiais.' },
+  ];
+
+  const stepVariants = {
+    initial: { opacity: 0, x: 20 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -20 }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] bg-surface-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-gradient-to-br from-brand-900/5 to-surface-50"></div>
+
+      <Card className="w-full max-w-2xl relative z-10 shadow-2xl border-brand-100 overflow-hidden min-h-[500px] flex flex-col">
+        {/* Progress Bar */}
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-surface-100">
+          <motion.div
+            initial={{ width: '25%' }}
+            animate={{ width: `${(step / 4) * 100}%` }}
+            className="h-full bg-brand-600"
+          />
+        </div>
+
+        <AnimatePresence mode="wait">
+          {step === 1 && (
+            <motion.div key="step1" {...stepVariants} className="flex-1 flex flex-col p-4">
+              <div className="mb-8">
+                <Badge variant="brand">Passo 1 de 4</Badge>
+                <h2 className="text-3xl font-bold text-surface-900 mt-2">Sua Igreja</h2>
+                <p className="text-surface-500">Comece informando os dados básicos da sua congregação.</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-semibold text-surface-700 mb-1.5 block">Nome da Igreja</label>
+                  <Input
+                    placeholder="Ex: Minify Zona Norte"
+                    value={data.churchName}
+                    onChange={(e: any) => setData({ ...data, churchName: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => setData({ ...data, churchType: 'HQ' })}
+                    className={`p-4 rounded-xl border transition-all text-left ${data.churchType === 'HQ' ? 'border-brand-500 bg-brand-50' : 'border-surface-200 hover:border-brand-200'}`}
+                  >
+                    <Building2 className={data.churchType === 'HQ' ? 'text-brand-600' : 'text-surface-400'} size={24} />
+                    <div className="font-bold mt-2">Sede</div>
+                    <div className="text-xs text-surface-500">Igreja principal ou única.</div>
+                  </button>
+                  <button
+                    onClick={() => setData({ ...data, churchType: 'BRANCH' })}
+                    className={`p-4 rounded-xl border transition-all text-left ${data.churchType === 'BRANCH' ? 'border-brand-500 bg-brand-50' : 'border-surface-200 hover:border-brand-200'}`}
+                  >
+                    <MapPin className={data.churchType === 'BRANCH' ? 'text-brand-600' : 'text-surface-400'} size={24} />
+                    <div className="font-bold mt-2">Filial</div>
+                    <div className="text-xs text-surface-500">Parte de um ministério maior.</div>
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-auto pt-8 flex justify-end">
+                <Button onClick={nextStep} disabled={!data.churchName} size="lg">Continuar <ArrowRight size={18} /></Button>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 2 && (
+            <motion.div key="step2" {...stepVariants} className="flex-1 flex flex-col p-4">
+              <div className="mb-8">
+                <Badge variant="brand">Passo 2 de 4</Badge>
+                <h2 className="text-3xl font-bold text-surface-900 mt-2">O que sua igreja precisa?</h2>
+                <p className="text-surface-500">Selecione os módulos que deseja ativar inicialmente.</p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {DEPARTMENTS.map(dept => (
+                  <button
+                    key={dept.id}
+                    onClick={() => {
+                      const exists = data.departments.includes(dept.id);
+                      setData({
+                        ...data,
+                        departments: exists
+                          ? data.departments.filter(d => d !== dept.id)
+                          : [...data.departments, dept.id]
+                      });
+                    }}
+                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${data.departments.includes(dept.id) ? 'border-brand-500 bg-brand-50' : 'border-surface-100 hover:border-brand-100 bg-surface-50/50'}`}
+                  >
+                    <div className={`p-2 rounded-lg ${data.departments.includes(dept.id) ? 'bg-brand-600 text-white' : 'bg-white text-surface-400 border'}`}>
+                      <dept.icon size={18} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-surface-900">{dept.name}</div>
+                      <div className="text-[10px] text-surface-500 uppercase font-bold tracking-wider">Módulo</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-auto pt-8 flex justify-between">
+                <Button variant="ghost" onClick={prevStep}>Voltar</Button>
+                <Button onClick={nextStep} size="lg">Avançar <ArrowRight size={18} /></Button>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 3 && (
+            <motion.div key="step3" {...stepVariants} className="flex-1 flex flex-col p-4">
+              <div className="mb-8">
+                <Badge variant="brand">Passo 3 de 4</Badge>
+                <h2 className="text-3xl font-bold text-surface-900 mt-2">Escolha seu Plano</h2>
+                <p className="text-surface-500">Selecione a opção que melhor se adapta à sua realidade.</p>
+              </div>
+
+              <div className="space-y-3">
+                {PLANS.map(plan => (
+                  <button
+                    key={plan.id}
+                    onClick={() => setData({ ...data, plan: plan.id })}
+                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all text-left ${data.plan === plan.id ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-500' : 'border-surface-200 hover:border-brand-200'}`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${data.plan === plan.id ? 'border-brand-600' : 'border-surface-300'}`}>
+                        {data.plan === plan.id && <div className="w-2.5 h-2.5 rounded-full bg-brand-600" />}
+                      </div>
+                      <div>
+                        <div className="font-bold text-surface-900">{plan.name}</div>
+                        <div className="text-xs text-surface-500">{plan.desc}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-brand-600">{plan.price}</div>
+                      <div className="text-[10px] text-surface-400 uppercase font-bold tracking-widest">{plan.period}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-auto pt-8 flex justify-between">
+                <Button variant="ghost" onClick={prevStep}>Voltar</Button>
+                <Button onClick={nextStep} size="lg">Ver Proposta <ArrowRight size={18} /></Button>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 4 && (
+            <motion.div key="step4" {...stepVariants} className="flex-1 flex flex-col p-4 items-center text-center">
+              <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-6">
+                <Sparkles size={40} className="animate-pulse" />
+              </div>
+              <h2 className="text-3xl font-bold text-surface-900">Tudo Pronto para Escalar!</h2>
+              <p className="text-surface-600 mt-4 max-w-sm">
+                Ao investir no Minify, você economiza até **10 horas semanais** com burocracia, foca no ministério e garante transparência total no financeiro.
+              </p>
+
+              <div className="mt-8 p-6 bg-brand-900 text-white rounded-2xl w-full text-left">
+                <div className="text-xs font-bold uppercase tracking-widest text-brand-400 mb-2">Sua Configuração</div>
+                <div className="text-xl font-bold mb-1">{data.churchName}</div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Badge variant="neutral" className="bg-white/10 border-white/20 text-white uppercase text-[8px]">{data.churchType === 'HQ' ? 'Sede' : 'Filial'}</Badge>
+                  <span className="text-brand-300 text-xs">• {data.departments.length} módulos ativos</span>
+                </div>
+                <div className="flex justify-between items-end border-t border-white/10 pt-4">
+                  <div>
+                    <div className="text-xs text-brand-300">Plano Escolhido</div>
+                    <div className="font-bold text-lg">{PLANS.find(p => p.id === data.plan)?.name}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-black">{PLANS.find(p => p.id === data.plan)?.price}</div>
+                    <div className="text-[8px] font-bold opacity-60">POR MÊS</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-auto pt-8 w-full flex gap-3">
+                <Button variant="ghost" className="flex-1" onClick={prevStep}>Ajustar</Button>
+                <Button className="flex-[2]" size="lg" onClick={() => onComplete(data)}>Começar Minha Jornada</Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Card>
+    </div>
+  );
+};
+// --- FINANCE DASHBOARD ---
+
+const FinanceDashboard = () => {
+  const transactions: Transaction[] = [
+    { id: 't1', type: 'income', amount: 2500, description: 'Dízimos Culto Domingo', category: 'Dízimos', date: new Date().toISOString(), churchId: 'hq' },
+    { id: 't2', type: 'expense', amount: 800, description: 'Conta de Energia', category: 'Operacional', date: new Date().toISOString(), churchId: 'hq' },
+    { id: 't3', type: 'income', amount: 450, description: 'Oferta Especial Missões', category: 'Ofertas', date: new Date().toISOString(), churchId: 'hq' },
+    { id: 't4', type: 'expense', amount: 1200, description: 'Aluguel Salão Filial', category: 'Aluguel', date: new Date().toISOString(), churchId: 'hq' },
+  ];
+
+  return (
+    <div className="space-y-8 animate-fade-in-up">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-brand-600 border-none text-white relative overflow-hidden group">
+          <div className="relative z-10">
+            <p className="text-brand-100 text-xs font-bold uppercase tracking-widest mb-1">Saldo Atual</p>
+            <h3 className="text-3xl font-black">R$ 15.420,50</h3>
+            <div className="flex items-center gap-2 mt-4 text-brand-200 text-sm">
+              <TrendingUp size={16} />
+              <span>+12% em relação ao mês anterior</span>
+            </div>
+          </div>
+          <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+          <Wallet className="absolute right-6 top-6 opacity-10" size={48} />
+        </Card>
+
+        <Card className="border-emerald-100 bg-emerald-50/30">
+          <p className="text-emerald-600 text-[10px] font-bold uppercase tracking-widest mb-1">Entradas (Mês)</p>
+          <h3 className="text-2xl font-bold text-surface-900">R$ 8.240,00</h3>
+          <div className="mt-4 flex items-center gap-2">
+            <div className="w-full bg-emerald-100 h-1.5 rounded-full overflow-hidden">
+              <div className="bg-emerald-500 h-full w-[75%]"></div>
+            </div>
+            <span className="text-xs font-bold text-emerald-600">75%</span>
+          </div>
+        </Card>
+
+        <Card className="border-rose-100 bg-rose-50/30">
+          <p className="text-rose-600 text-[10px] font-bold uppercase tracking-widest mb-1">Saídas (Mês)</p>
+          <h3 className="text-2xl font-bold text-surface-900">R$ 3.120,00</h3>
+          <div className="mt-4 flex items-center gap-2">
+            <div className="w-full bg-rose-100 h-1.5 rounded-full overflow-hidden">
+              <div className="bg-rose-500 h-full w-[35%]"></div>
+            </div>
+            <span className="text-xs font-bold text-rose-600">35%</span>
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-8 space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className="font-bold text-xl text-surface-900">Transações Recentes</h3>
+            <div className="flex gap-2">
+              <Button size="sm" variant="secondary"><Filter size={16} /> Filtrar</Button>
+              <Button size="sm"><Plus size={16} /> Nova</Button>
+            </div>
+          </div>
+
+          <Card noPadding className="overflow-hidden border-surface-200">
+            <div className="bg-surface-50 px-6 py-3 border-b border-surface-200 grid grid-cols-4 text-[10px] font-black uppercase text-surface-400 tracking-widest">
+              <div className="col-span-2">Descrição</div>
+              <div>Categoria</div>
+              <div className="text-right">Valor</div>
+            </div>
+            <div className="divide-y divide-surface-100">
+              {transactions.map(t => (
+                <div key={t.id} className="px-6 py-4 grid grid-cols-4 items-center hover:bg-surface-50/50 transition-colors group">
+                  <div className="col-span-2 flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${t.type === 'income' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                      {t.type === 'income' ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-surface-900 group-hover:text-brand-600 transition-colors">{t.description}</div>
+                      <div className="text-[10px] text-surface-500">{new Date(t.date).toLocaleDateString('pt-BR')}</div>
+                    </div>
+                  </div>
+                  <div className="text-xs font-medium text-surface-600">{t.category}</div>
+                  <div className={`text-right font-bold ${t.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {t.type === 'income' ? '+' : '-'} R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        <div className="lg:col-span-4 space-y-6">
+          <h3 className="font-bold text-xl text-surface-900">Insights Financeiros</h3>
+          <Card className="bg-surface-900 border-none text-white p-6 shadow-xl">
+            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
+              <TrendingUp className="text-brand-400" />
+            </div>
+            <h4 className="font-bold text-lg mb-2">Meta de Missões</h4>
+            <p className="text-surface-400 text-sm mb-6">Estamos a apenas **R$ 1.500** de atingir nossa meta para o projeto missionário.</p>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs font-bold">
+                <span className="text-brand-300">Progresso</span>
+                <span>85%</span>
+              </div>
+              <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                <div className="bg-brand-500 h-full w-[85%] shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-0 overflow-hidden">
+            <div className="p-4 border-b border-surface-100 flex items-center gap-3">
+              <div className="p-2 bg-brand-50 text-brand-600 rounded-lg"><Activity size={18} /></div>
+              <span className="font-bold text-sm">Distribuição de Gastos</span>
+            </div>
+            <div className="p-4 space-y-4">
+              {[
+                { label: 'Operacional', val: 45, color: 'bg-indigo-500' },
+                { label: 'Manutenção', val: 25, color: 'bg-emerald-500' },
+                { label: 'Social', val: 30, color: 'bg-amber-500' }
+              ].map(item => (
+                <div key={item.label}>
+                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1">
+                    <span>{item.label}</span>
+                    <span>{item.val}%</span>
+                  </div>
+                  <div className="w-full bg-surface-100 h-1 rounded-full overflow-hidden">
+                    <div className={`${item.color} h-full`} style={{ width: `${item.val}%` }}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- GAMIFIED TUTORIAL ---
+
+const GamifiedTutorial = ({ onFinish }: { onFinish: () => void }) => {
+  const [step, setStep] = useState(0);
+  const steps = [
+    {
+      title: "Seja bem-vindo, Pastor!",
+      content: "O Minify é o seu novo braço direito na gestão do Reino. Vamos te mostrar o básico em 30 segundos.",
+      icon: <Sparkles size={40} className="text-amber-400" />
+    },
+    {
+      title: "Financeiro em Tempo Real",
+      content: "Aqui você tem transparência total. Dízimos, ofertas e gastos da sede e filiais em um só lugar.",
+      icon: <DollarSign size={40} className="text-emerald-400" />
+    },
+    {
+      title: "Comunicação que Transforma",
+      content: "Use o Feed para manter a igreja unida e bem informada sobre cada culto e evento.",
+      icon: <MessageSquare size={40} className="text-brand-400" />
+    },
+    {
+      title: "Inteligência & Gestão",
+      content: "Nossa IA te ajuda a analisar dados e focar no que realmente importa: as pessoas.",
+      icon: <LayoutDashboard size={40} className="text-indigo-400" />
+    }
+  ];
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[100] bg-surface-900/90 backdrop-blur-xl flex items-center justify-center p-6"
+      >
+        <motion.div
+          initial={{ scale: 0.9, y: 20 }}
+          animate={{ scale: 1, y: 0 }}
+          className="bg-white rounded-[2.5rem] p-8 max-w-lg w-full text-center relative overflow-hidden shadow-2xl border border-white/20"
+        >
+          {/* Animated Background Element */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-brand-500/10 rounded-full blur-[80px]"></div>
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.1 }}
+              transition={{ duration: 0.4 }}
+              className="relative z-10"
+            >
+              <div className="w-24 h-24 bg-surface-50 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner border border-surface-100">
+                {steps[step].icon}
+              </div>
+              <h2 className="text-3xl font-black text-surface-900 leading-tight mb-4">{steps[step].title}</h2>
+              <p className="text-surface-600 text-lg leading-relaxed mb-10 px-4">{steps[step].content}</p>
+            </motion.div>
+          </AnimatePresence>
+
+          <div className="flex flex-col gap-4 relative z-10">
+            <Button size="lg" className="w-full text-lg h-14" onClick={() => step < steps.length - 1 ? setStep(s => s + 1) : onFinish()}>
+              {step < steps.length - 1 ? "Próximo Passo 🚀" : "Vamos Começar! 🎉"}
+            </Button>
+            <div className="flex justify-center gap-2">
+              {steps.map((_, i) => (
+                <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${step === i ? 'w-8 bg-brand-600' : 'w-2 bg-surface-200'}`} />
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
 const AuthScreen = ({ onLogin }: any) => {
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
   const [isLoading, setIsLoading] = useState(false);
@@ -197,28 +622,23 @@ const AuthScreen = ({ onLogin }: any) => {
     setError(null);
     setSuccess(null);
     try {
-      console.log('Iniciando cadastro para:', email);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: email.split('@')[0],
-            role: 'admin' // Definindo como admin por padrão para facilitar o teste inicial
+            role: 'admin'
           }
         }
       });
 
       if (error) throw error;
 
-      console.log('Resultado Supabase:', data);
-
       if (data?.user) {
-        // Se o usuário foi criado mas não há sessão (precisa confirmar e-mail)
         if (!data.session) {
           setSuccess('Cadastro realizado! Verifique seu e-mail para confirmar a conta antes de entrar.');
         } else {
-          // Se o login foi automático (e-mail confirmation desativado no Supabase)
           onLogin({
             id: data.user.id,
             name: data.user.email?.split('@')[0] || 'Novo Usuário',
@@ -230,7 +650,6 @@ const AuthScreen = ({ onLogin }: any) => {
         }
       }
     } catch (err: any) {
-      console.error('Erro no Supabase Register:', err);
       setError(err.message || 'Erro ao realizar cadastro.');
     } finally {
       setIsLoading(false);
@@ -573,7 +992,7 @@ const ServicesManager = ({ events, onAddService }: any) => {
 // --- MAIN LAYOUT & APP ---
 
 export default function App() {
-  const [view, setView] = useState<'login' | 'register' | 'forgot' | 'app'>('login');
+  const [view, setView] = useState<'login' | 'onboarding' | 'app'>('login');
   const [user, setUser] = useState<UserType | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
@@ -595,7 +1014,10 @@ export default function App() {
           avatar: `https://ui-avatars.com/api/?name=${session.user.email}&background=6366f1&color=fff`,
           churchId: 'hq'
         });
-        setView('app');
+
+        // Verificar se precisa de onboarding (por agora, apenas checamos localmente)
+        const hasCompletedOnboarding = localStorage.getItem(`onboarding_${session.user.id}`);
+        setView(hasCompletedOnboarding ? 'app' : 'onboarding');
       }
     });
 
@@ -610,7 +1032,8 @@ export default function App() {
           avatar: `https://ui-avatars.com/api/?name=${session.user.email}&background=6366f1&color=fff`,
           churchId: 'hq'
         });
-        setView('app');
+        const hasCompletedOnboarding = localStorage.getItem(`onboarding_${session.user.id}`);
+        setView(hasCompletedOnboarding ? 'app' : 'onboarding');
       } else {
         setUser(null);
         setView('login');
@@ -620,13 +1043,26 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleLogin = (u: UserType) => { setUser(u); setView('app'); };
+  const handleLogin = (u: UserType) => {
+    setUser(u);
+    const hasCompletedOnboarding = localStorage.getItem(`onboarding_${u.id}`);
+    setView(hasCompletedOnboarding ? 'app' : 'onboarding');
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
 
+  const handleOnboardingComplete = (data: any) => {
+    console.log('Onboarding Finalizado:', data);
+    if (user?.id) {
+      localStorage.setItem(`onboarding_${user.id}`, 'true');
+    }
+    setView('app');
+  };
+
   if (view === 'login') return <AuthScreen onLogin={handleLogin} />;
+  if (view === 'onboarding') return <OnboardingWizard onComplete={handleOnboardingComplete} />;
   if (!user) return null;
 
   const SidebarItem = ({ item, active, onClick }: any) => (
@@ -716,19 +1152,23 @@ export default function App() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in-up">
                 {/* Main Feed */}
                 <div className="col-span-1 lg:col-span-8 space-y-8">
-                  <Card noPadding className="overflow-hidden">
-                    <div className="p-6 bg-gradient-to-r from-brand-600 to-indigo-700 text-white">
-                      <h3 className="font-bold text-lg mb-1">Compartilhar com a Igreja</h3>
-                      <p className="text-brand-100 text-sm">Publique avisos, devocionais ou atualizações.</p>
+                  <Card noPadding className="overflow-hidden border-surface-200">
+                    <div className="p-6 bg-gradient-to-r from-brand-600 to-indigo-700 text-white flex justify-between items-center">
+                      <div>
+                        <h3 className="font-bold text-lg mb-1">Compartilhar com a Igreja</h3>
+                        <p className="text-brand-100 text-sm">Publique avisos, devocionais ou atualizações.</p>
+                      </div>
+                      <Sparkles className="text-brand-400 opacity-50" />
                     </div>
                     <div className="p-6">
                       <textarea className="w-full border-none resize-none focus:ring-0 text-surface-700 placeholder:text-surface-400 text-lg bg-transparent outline-none min-h-[100px]" placeholder="O que você gostaria de compartilhar hoje?" />
                       <div className="flex justify-between items-center mt-4 pt-4 border-t border-surface-100">
                         <div className="flex gap-2">
-                          <button className="p-2 hover:bg-surface-100 rounded-lg text-surface-500"><ImageIcon size={20} /></button>
-                          <button className="p-2 hover:bg-surface-100 rounded-lg text-surface-500"><Paperclip size={20} /></button>
+                          <button className="p-2 hover:bg-surface-100 rounded-lg text-surface-500 transition-colors"><ImageIcon size={20} /></button>
+                          <button className="p-2 hover:bg-surface-100 rounded-lg text-surface-500 transition-colors"><Paperclip size={20} /></button>
+                          <button className="p-2 hover:bg-surface-100 rounded-lg text-surface-500 transition-colors"><MessageCircle size={20} /></button>
                         </div>
-                        <Button size="md">Publicar</Button>
+                        <Button size="md" className="px-8 shadow-brand-500/25">Publicar</Button>
                       </div>
                     </div>
                   </Card>
@@ -799,6 +1239,8 @@ export default function App() {
             {activeTab === 'calendar' && <CalendarView events={events} onAddEvent={() => { }} />}
             {activeTab === 'services' && <ServicesManager events={events} onAddService={() => setShowServiceModal(true)} />}
 
+            {activeTab === 'finance' && <FinanceDashboard />}
+
             {activeTab === 'teaching' && (
               <div className="flex flex-col items-center justify-center h-[50vh] text-center">
                 <div className="bg-brand-50 p-6 rounded-full mb-4"><GraduationCap size={48} className="text-brand-400" /></div>
@@ -819,6 +1261,15 @@ export default function App() {
       {showServiceModal && <CreateServiceModal onClose={() => setShowServiceModal(false)} onSave={(e: any) => { setEvents([...events, e]); setShowServiceModal(false) }} />}
 
       <AIChat userRole={user.role} isOpen={isAIChatOpen} onClose={() => setIsAIChatOpen(false)} />
+
+      {/* Gamified Tutorial Overlay */}
+      {view === 'app' && !localStorage.getItem(`tutorial_seen_${user.id}`) && (
+        <GamifiedTutorial onFinish={() => {
+          localStorage.setItem(`tutorial_seen_${user.id}`, 'true');
+          // Forçar renderização para remover tutorial
+          setView('app');
+        }} />
+      )}
     </div>
   );
 }
